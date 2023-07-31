@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-
-import 'geolocation_service.dart';
+import 'geolocation_controller.dart';
 
 class GeolocationScreen extends StatefulWidget {
-  final GeolocationService geolocationService; // Додайте поле для сервісу
-
-  GeolocationScreen({required this.geolocationService}); // Додайте параметр у конструктор
-
   @override
   _GeolocationScreenState createState() => _GeolocationScreenState();
 }
 
 class _GeolocationScreenState extends State<GeolocationScreen> {
+  GeolocationController _geolocationController = GeolocationController();
   Position? _currentPosition;
   bool _isTracking = false;
+
+  @override
+  void dispose() {
+    _geolocationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,24 +30,36 @@ class _GeolocationScreenState extends State<GeolocationScreen> {
           children: [
             ElevatedButton(
               onPressed: () {
-                if (_isTracking) {
-                  setState(() {
-                    _isTracking = false;
-                  });
-                } else {
-                  _startTracking();
-                }
+                _toggleTracking();
               },
               child: Text(_isTracking ? 'Stop Tracking' : 'Start Tracking'),
             ),
             SizedBox(height: 20),
-            Text(_currentPosition != null
-                ? 'Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}'
-                : 'Location data not available'),
+            StreamBuilder<Position>(
+              stream: _geolocationController.positionStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  Position position = snapshot.data!;
+                  return Text('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+                } else if (snapshot.hasError) {
+                  return Text('Error getting location: ${snapshot.error}');
+                } else {
+                  return Text('Location data not available');
+                }
+              },
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void _toggleTracking() {
+    if (_isTracking) {
+      _stopTracking();
+    } else {
+      _startTracking();
+    }
   }
 
   void _startTracking() {
@@ -53,20 +67,12 @@ class _GeolocationScreenState extends State<GeolocationScreen> {
       _isTracking = true;
     });
 
-    _getCurrentLocation();
+    _geolocationController.startTracking(desiredAccuracy: LocationAccuracy.best);
   }
 
-  void _getCurrentLocation() async {
-    while (_isTracking) {
-      try {
-        Position position = await widget.geolocationService.determinePosition(); // Використовуйте метод з сервісу через поле widget.geolocationService
-        setState(() {
-          _currentPosition = position;
-        });
-      } catch (e) {
-        print('Error getting location: $e');
-      }
-      await Future.delayed(Duration(seconds: 1));
-    }
+  void _stopTracking() {
+    setState(() {
+      _isTracking = false;
+    });
   }
 }
