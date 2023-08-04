@@ -14,6 +14,9 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>geolocation</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>Додаток потребує доступ до вашої геолокації для відображення вашого місцезнаходження на карті.</string>
+
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
