@@ -1,23 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'geolocation_controller.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class GeolocationScreen extends StatefulWidget {
-  @override
-  _GeolocationScreenState createState() => _GeolocationScreenState();
-}
+import 'bloc/bloc_controller.dart';
+import 'bloc/bloc_event.dart';
+import 'bloc/bloc_state.dart';
 
-class _GeolocationScreenState extends State<GeolocationScreen> {
-  GeolocationController _geolocationController = GeolocationController();
-  Position? _currentPosition;
-  bool _isTracking = false;
-
-  @override
-  void dispose() {
-    _geolocationController.dispose();
-    super.dispose();
-  }
-
+class GeolocationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,19 +18,18 @@ class _GeolocationScreenState extends State<GeolocationScreen> {
           children: [
             ElevatedButton(
               onPressed: () {
-                _toggleTracking();
+                _toggleTracking(context);
               },
-              child: Text(_isTracking ? 'Stop Tracking' : 'Start Tracking'),
+              child: Text('Start Tracking'),
             ),
             SizedBox(height: 20),
-            StreamBuilder<Position>(
-              stream: _geolocationController.positionStream,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  Position position = snapshot.data!;
-                  return Text('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
-                } else if (snapshot.hasError) {
-                  return Text('Error getting location: ${snapshot.error}');
+            BlocConsumer<GeolocationBloc, GeolocationState>(
+              listener: (context, state) {
+                // Optional: You can handle state changes here if needed
+              },
+              builder: (context, state) {
+                if (state is GeolocationTrackingState) {
+                  return Text('Latitude: ${state.position.latitude}, Longitude: ${state.position.longitude}');
                 } else {
                   return Text('Location data not available');
                 }
@@ -54,25 +41,16 @@ class _GeolocationScreenState extends State<GeolocationScreen> {
     );
   }
 
-  void _toggleTracking() {
-    if (_isTracking) {
-      _stopTracking();
+  void _toggleTracking(BuildContext context) {
+    final bloc = BlocProvider.of<GeolocationBloc>(context);
+    final currentState = bloc.state;
+
+    if (currentState is GeolocationInitial) {
+      // Start tracking if not already tracking
+      bloc.add(StartTrackingEvent());
     } else {
-      _startTracking();
+      // Stop tracking if already tracking
+      bloc.add(StopTrackingEvent());
     }
-  }
-
-  void _startTracking() {
-    setState(() {
-      _isTracking = true;
-    });
-
-    _geolocationController.startTracking(desiredAccuracy: LocationAccuracy.best);
-  }
-
-  void _stopTracking() {
-    setState(() {
-      _isTracking = false;
-    });
   }
 }

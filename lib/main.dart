@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'bloc/bloc_controller.dart';
 import 'geolocation_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Your Geolocation',
-      home: GeolocationScreen(),
+      home: BlocProvider(
+        create: (context) => GeolocationBloc(),
+        child: GeolocationScreen(),
+      ),
     );
   }
 }
